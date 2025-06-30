@@ -1,0 +1,30 @@
+
+"Phrases"
+{
+    "BONUS_NAME"
+    {
+        "ru"            "Охотник на ведьм"
+    }
+
+    "BONUS_SHORT_NAME"
+	{
+		"ru"			"WH"
+	}
+
+    "BONUS_DESCRIPTION"
+    {
+        "#format"		"{1:d}"
+        "ru"            "Убейте Ведьму, чтобы не потерять {1} очков"
+    }
+
+    "TAG"
+    {
+        "ru"            "<{green}Witch Penalty{default}> "
+    }
+
+    "ON_WITCH_CREATED"
+    {
+        "#format"       "{1:d}"
+        "ru"            "Убейте {olive}Ведьму{default}, чтобы не потерять {1} очков"
+    }
+}

@@ -1,0 +1,75 @@
+"Phrases"
+{
+    "BRACKET_START"
+    {
+        "en"			"┌ "
+    }
+
+    "BRACKET_MIDDLE"
+    {
+        "en"			"├ "
+    }
+
+    "BRACKET_END"
+    {
+        "en"			"└ "
+    }
+
+    "TAG"
+    {
+        "en"			"<{green}Bonus{default}> "
+    }
+
+    "PANEL_BONUS_TITLE"
+    {
+        "#format"		"{1:d},{2:s},{3:d}"
+        "en"			"List of bonuses/penalties in round #{1}:\n(Total: {2}{3})\n "
+    }
+
+    "PANEL_RESULT_OF_ROUND"
+    {
+        "#format"		"{1:d}"
+        "en"			"Results of round #{1}\n "
+    }
+
+    "PANEL_BONUS_ITEM"
+    {
+        "#format"		"{1:s},{2:s},{3:d}"
+        "en"			"[{2}{3}] {1}"
+    }
+
+    "PANEL_BONUS_INFO"
+    {
+        "#format"		"{1:s},{2:s},{3:s}{4:d}"
+        "en"			"{1}:\n(Total: {3}{4})\n \n{2}\n "
+    }
+
+
+    "CHAT_BONUS_TITLE"
+    {
+        "en"			"Bonus/penalty by round: (See {olive}!bonusmenu{default})"
+    }
+
+    "CHAT_SHOW_BONUS_OR_PENALTY"
+    {
+        "#format"		"{1:d},{2:d}"
+        "en"			"R#{1}: {olive}{2}"
+    }
+
+    "CHAT_SHOW_BONUS_OR_PENALTY_FULL"
+    {
+        "#format"		"{1:d},{2:d},{3:s}"
+        "en"			"R#{1}: {olive}{2}{default} [{3}]"
+    }
+
+   "CHAT_BONUS_ITEM_DELIMITER"
+    {
+        "en"			" | "
+    }
+
+    "CHAT_BONUS_ITEM"
+    {
+        "#format"		"{1:s},{2:d},{3:s}"
+        "en"			"{1}: {lightgreen}{2}{default}{3}"
+    }
+}

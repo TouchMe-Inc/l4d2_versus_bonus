@@ -1,0 +1,17 @@
+"Phrases"
+{
+	"BONUS_NAME"
+	{
+		"ru"			"Damage Bonus"
+	}
+
+	"BONUS_SHORT_NAME"
+	{
+		"ru"			"DB"
+	}
+
+	"BONUS_DESCRIPTION"
+	{
+		"ru"			"Бонус снижается при получении урона по ВРЕМЕННОМУ здоровью,\nвыведении из строя или гибели выжившего"
+	}
+}

@@ -1,0 +1,18 @@
+"Phrases"
+{
+	"BONUS_NAME"
+	{
+		"en"			"Pills Bonus"
+	}
+
+	"BONUS_SHORT_NAME"
+	{
+		"en"			"PB"
+	}
+
+	"BONUS_DESCRIPTION"
+	{
+		"#format"		"{1:d}"
+		"en"			"Save the pain pills and get {1} points"
+	}
+}

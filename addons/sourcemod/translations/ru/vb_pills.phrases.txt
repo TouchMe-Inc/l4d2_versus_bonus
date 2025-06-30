@@ -1,0 +1,18 @@
+"Phrases"
+{
+	"BONUS_NAME"
+	{
+		"ru"			"Pills Bonus"
+	}
+
+	"BONUS_SHORT_NAME"
+	{
+		"ru"			"PB"
+	}
+
+	"BONUS_DESCRIPTION"
+	{
+		"#format"		"{1:d}"
+		"ru"			"Сохраните обезболивающие и получите {1} очков"
+	}
+}

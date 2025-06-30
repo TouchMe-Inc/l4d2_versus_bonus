@@ -1,0 +1,29 @@
+"Phrases"
+{
+	"BONUS_NAME"
+	{
+		"en"			"Witch Hunter"
+	}
+
+	"BONUS_SHORT_NAME"
+	{
+		"en"			"WH"
+	}
+
+	"BONUS_DESCRIPTION"
+	{
+		"#format"		"{1:d}"
+		"en"			"Kill the Witch or lose {1} points"
+	}
+
+	"TAG"
+	{
+		"en"			"<{green}Witch Penalty{default}> "
+	}
+
+	"ON_WITCH_CREATED"
+	{
+		"#format"		"{1:d}"
+		"en"			"Kill the {olive}Witch{default} to avoid getting a penalty {1}"
+	}
+}

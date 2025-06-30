@@ -1,0 +1,23 @@
+"Phrases"
+{
+	"BONUS_NAME"
+	{
+		"ru"			"Health Bonus"
+	}
+
+	"BONUS_SHORT_NAME"
+	{
+		"ru"			"HB"
+	}
+
+	"BONUS_DESCRIPTION"
+	{
+		"ru"			"Урон ПОСТОЯННОМУ здоровью снижает бонус\n \n"
+	}
+
+	"BONUS_CHARACTER"
+	{
+		"#format"		"{1:s},{2:d},{3:d}"
+		"en"			"  [+{3}] {1} ({2}HP)\n"
+	}
+}

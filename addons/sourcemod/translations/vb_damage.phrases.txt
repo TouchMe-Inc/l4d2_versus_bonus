@@ -1,0 +1,17 @@
+"Phrases"
+{
+	"BONUS_NAME"
+	{
+		"en"			"Damage Bonus"
+	}
+
+	"BONUS_SHORT_NAME"
+	{
+		"en"			"DB"
+	}
+
+	"BONUS_DESCRIPTION"
+	{
+		"en"			"The bonus is reduced \nwhen taking damage to TEMPORARY health,\nincapacitating or killing a survivor"
+	}
+}
