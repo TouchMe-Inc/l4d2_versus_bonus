@@ -275,7 +275,7 @@ int GetAliveSurvivorCount()
 
     for (int iClient = 1; iClient <= MaxClients; iClient++)
     {
-        if (!IsClientInGame(iClient) || !IsClientSurvivor(iClient)) {
+        if (!IsClientInGame(iClient) || !IsClientSurvivor(iClient) || !IsPlayerAlive(iClient)) {
             continue;
         }
 
