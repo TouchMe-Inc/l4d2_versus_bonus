@@ -2,7 +2,7 @@
 {
 	"BONUS_NAME"
 	{
-		"ru"			"Pills Bonus"
+		"ru"			"Бонус таблеток"
 	}
 
 	"BONUS_SHORT_NAME"
