@@ -20,30 +20,35 @@
         "en"			"<{green}Bonus{default}> "
     }
 
-    "PANEL_BONUS_TITLE"
+    "MENU_TITLE"
     {
         "#format"		"{1:d},{2:s},{3:d}"
         "en"			"List of bonuses/penalties in round #{1}:\n(Total: {2}{3})\n "
     }
 
-    "PANEL_RESULT_OF_ROUND"
+    "MENU_TITLE_WITH_PAGE"
+    {
+        "#format"		"{1:d},{2:d},{3:d},{4:s},{5:d}"
+        "en"			"List of bonuses/penalties in round #{1} (Page {2}/{3}):\n(Total: {4}{5})\n "
+    }
+
+    "MENU_RESULT_OF_ROUND"
     {
         "#format"		"{1:d}"
         "en"			"Results of round #{1}\n "
     }
 
-    "PANEL_BONUS_ITEM"
+    "MENU_ITEM"
     {
-        "#format"		"{1:s},{2:s},{3:d}"
-        "en"			"[{2}{3}] {1}"
+        "#format"		"{1:s},{2:d},{3:s},{4:s}"
+        "en"			"[{1}{2}] {3} <{4}>"
     }
 
-    "PANEL_BONUS_INFO"
+    "MENU_BONUS_INFO"
     {
-        "#format"		"{1:s},{2:s},{3:s}{4:d}"
-        "en"			"{1}:\n(Total: {3}{4})\n \n{2}\n "
+        "#format"		"{1:s},{2:s}{3:d}"
+        "en"			"{1}:\n(Total: {2}{3})\n "
     }
-
 
     "CHAT_BONUS_TITLE"
     {
@@ -71,5 +76,28 @@
     {
         "#format"		"{1:s},{2:d},{3:s}"
         "en"			"{1}: {lightgreen}{2}{default}{3}"
+    }
+
+    // ============================
+    //  NAVIGATION
+    // ============================
+    "MENU_NEXT_PAGE"
+    {
+        "en"            "Next"
+    }
+
+    "MENU_PREV_PAGE"
+    {
+        "en"            "Back"
+    }
+
+    "MENU_BACK"
+    {
+        "en"            "Back"
+    }
+
+    "MENU_CLOSE"
+    {
+        "en"            "Close"
     }
 }

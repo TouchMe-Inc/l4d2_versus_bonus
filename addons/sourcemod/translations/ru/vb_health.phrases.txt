@@ -2,7 +2,7 @@
 {
 	"BONUS_NAME"
 	{
-		"ru"			"Health Bonus"
+		"ru"			"Бонус здоровья"
 	}
 
 	"BONUS_SHORT_NAME"

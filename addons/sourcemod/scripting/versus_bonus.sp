@@ -17,7 +17,7 @@ public Plugin myinfo =
     name        = "VersusBonus",
     author      = "TouchMe",
     description = "[API ONLY] Modular system of bonuses/penalties",
-    version     = "build_0008",
+    version     = "build_0009",
     url         = "https://github.com/TouchMe-Inc/l4d2_versus_bonus"
 };
 
@@ -44,6 +44,15 @@ public Plugin myinfo =
 // Game Rule Team
 #define TEAM_A                  0
 #define TEAM_B                  1
+
+// Menu
+#define MENU_KEY_BACK 8
+#define MENU_KEY_NEXT 9
+#define MENU_PAGE_SIZE 6
+
+// Sound
+#define DEFAULT_MENU_CLICK_SOUND "ui/buttonclick.wav"
+#define DEFAULT_MENU_BACK_SOUND  "ui/buttonrollover.wav"
 
 // Sugar
 #define GetVersusCampaignScores L4D2_GetVersusCampaignScores
@@ -84,6 +93,9 @@ int g_iClientMenuPagePosition[MAXPLAYERS + 1] = {0, ...};
 int g_iClientMenuShowRound[MAXPLAYERS + 1] = {0, ...};
 int g_iClientMenuShowIndex[MAXPLAYERS + 1] = {0, ...};
 MenuState g_eClientMenuState[MAXPLAYERS + 1] = {MenuState_None, ...};
+
+ConVar g_cvMenuClickSound, g_cvMenuBackSound;
+char g_szMenuClickSound[PLATFORM_MAX_PATH], g_szMenuBackSound[PLATFORM_MAX_PATH];
 
 bool g_bUpdateSelf = false;
 
@@ -161,6 +173,15 @@ any Native_MakeBonusCritery(Handle hPlugin, int iParams)
     return iIndex;
 }
 
+public void OnMapStart()
+{
+    LoadSoundFromCvar(g_cvMenuClickSound, g_szMenuClickSound, sizeof g_szMenuClickSound, DEFAULT_MENU_CLICK_SOUND);
+    LoadSoundFromCvar(g_cvMenuBackSound, g_szMenuBackSound, sizeof g_szMenuBackSound, DEFAULT_MENU_BACK_SOUND);
+
+    PrecacheSound(g_szMenuClickSound);
+    PrecacheSound(g_szMenuBackSound);
+}
+
 public void OnPluginStart()
 {
     LoadTranslations(TRANSLATIONS);
@@ -180,6 +201,9 @@ public void OnPluginStart()
     GetConVarString(g_cvGameMode, szGamemode, sizeof szGamemode);
     g_bGamemodeAvailable = IsVersusMode(szGamemode);
 
+    g_cvMenuClickSound  = CreateConVar("sm_vb_click_sound", DEFAULT_MENU_CLICK_SOUND, "Path to the sound that is played when ..");
+    g_cvMenuBackSound   = CreateConVar("sm_vb_back_sound", DEFAULT_MENU_BACK_SOUND, "Path to the sound that is played when ..");
+
     g_hCriteries = CreateArray(sizeof CriteryInfo);
     g_hHistoryCriteries[0] = CreateArray();
     g_hHistoryCriteries[1] = CreateArray();
@@ -195,24 +219,34 @@ Action Timer_UpdateBonusList(Handle hTimer)
 
     for (int iClient = 1; iClient <= MaxClients; iClient ++)
     {
+        if (g_eClientMenuState[iClient] == MenuState_None) {
+            continue;
+        }
+
         if (!IsClientInGame(iClient) || IsFakeClient(iClient)) {
             continue;
         }
 
+        switch (GetClientMenu(iClient)) {
+            case MenuSource_External, MenuSource_Normal: {
+                continue;
+            }
+        }
+
+        g_bUpdateSelf = true;
+
         switch (g_eClientMenuState[iClient])
         {
             case MenuState_ShowList: {
-                g_bUpdateSelf = true;
                 ShowBonusMenu(iClient, g_iClientMenuPagePosition[iClient], g_iClientMenuShowRound[iClient]);
-                g_bUpdateSelf = false;
             }
 
             case MenuState_ShowDescription: {
-                g_bUpdateSelf = true;
-                ShowBonusMenuDescription(iClient, g_iClientMenuShowIndex[iClient]);
-                g_bUpdateSelf = false;
+                ShowBonusDescription(iClient, g_iClientMenuShowIndex[iClient]);
             }
         }
+
+        g_bUpdateSelf = false;
     }
 
     return Plugin_Continue;
@@ -393,31 +427,34 @@ void ShowBonusMenu(int iClient, int iStartItem, int iRoundNumber)
     g_iClientMenuShowRound[iClient] = iRoundNumber;
     g_eClientMenuState[iClient] = MenuState_ShowList;
 
-    Menu menu = CreateMenu(HandleShowBonusMenu);
+    Panel panel = CreatePanel();
 
-    int iCurrentRoundNumber = GetRoundNumber();
-    int iInvertedRoundNumber = InvertRoundNumber(iRoundNumber);
+    int iStart = iStartItem;
+    int iMaxPages = GetMaxPages(g_iCriteriesSize);
+    int iCurrentPage = GetCurrentPage(iStart);
+    int iEnd = GetPageEnd(iStart, g_iCriteriesSize);
 
     bool bSelectable = g_bRoundIsLive && iRoundNumber == GetRoundNumber();
-    bool bSwitchable = iCurrentRoundNumber == ROUND_SECOND;
+    bool bSwitchable = GetRoundNumber() == ROUND_SECOND;
 
     if (!bSelectable && GetArraySize(g_hHistoryCriteries[iRoundNumber - 1]) == 0) {
         return;
     }
 
-    char szFormatedText[64];
+    char szFormatedText[128];
 
-    FormatEx(szFormatedText, sizeof szFormatedText, "%T", "PANEL_RESULT_OF_ROUND", iClient, iInvertedRoundNumber);
-    AddMenuItem(menu, "switcher", szFormatedText, bSwitchable ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
-
+    int iItemNumber = 1;
     int iTotalBonus = 0;
     char szItemName[64];
-    for (int iIdx = 0, iTempValue = 0; iIdx < g_iCriteriesSize; iIdx ++)
+    char szItemShortName[64];
+    for (int iIdx = iStart; iIdx < iEnd; iIdx++)
     {
         CriteryInfo critery;
         GetArrayArray(g_hCriteries, iIdx, critery);
-        ExecuteForward_GetName(critery.name, szItemName, sizeof(szItemName), iClient);
+        ExecuteForward_GetName(critery.name, szItemName, sizeof szItemName, iClient);
+        ExecuteForward_GetShortName(critery.short_name, szItemShortName, sizeof szItemShortName, iClient);
 
+        int iTempValue;
         if (bSelectable) {
             ExecuteForward_GetValue(critery.value, iTempValue);
         } else {
@@ -425,66 +462,127 @@ void ShowBonusMenu(int iClient, int iStartItem, int iRoundNumber)
         }
 
         FormatEx(szFormatedText, sizeof szFormatedText,
-            "%T", "PANEL_BONUS_ITEM", iClient, szItemName, SIGN(iTempValue), Abs(iTempValue)
+            "%s%d. %T", bSelectable ? "->" : "", iItemNumber++, "MENU_ITEM", iClient, SIGN(iTempValue), Abs(iTempValue), szItemName, szItemShortName
         );
-        AddMenuItem(menu, "item", szFormatedText, bSelectable ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+        DrawPanelText(panel, szFormatedText);
 
         iTotalBonus += iTempValue;
     }
 
-    SetMenuTitle(menu, "%T",
-        "PANEL_BONUS_TITLE", iClient, iRoundNumber, SIGN(iTotalBonus), Abs(iTotalBonus)
-    );
+    DrawPanelSpacer(panel);
 
-    DisplayMenuAtItem(menu, iClient, iStartItem, 1);
+    FormatEx(szFormatedText, sizeof szFormatedText, "%s7. %T", bSwitchable ? "->" : "", "MENU_RESULT_OF_ROUND", iClient, InvertRoundNumber(iRoundNumber));
+    DrawPanelText(panel, szFormatedText);
+
+    DrawPanelSpacer(panel);
+
+    if (HasPrevPage(iCurrentPage))
+    {
+        FormatEx(szFormatedText, sizeof szFormatedText, "->%d. %T", MENU_KEY_BACK, "MENU_PREV_PAGE", iClient);
+        DrawPanelText(panel, szFormatedText);
+    } else {
+        FormatEx(szFormatedText, sizeof szFormatedText, "->%d. %T", MENU_KEY_BACK, "MENU_CLOSE", iClient);
+        DrawPanelText(panel, szFormatedText);
+    }
+
+    if (HasNextPage(iCurrentPage, iMaxPages))
+    {
+        FormatEx(szFormatedText, sizeof szFormatedText, "->%d. %T", MENU_KEY_NEXT, "MENU_NEXT_PAGE", iClient);
+        DrawPanelText(panel, szFormatedText);
+    } else if (iMaxPages > 1) {
+        DrawPanelSpacer(panel);
+    }
+
+    if (iMaxPages > 1) {
+        FormatEx(szFormatedText, sizeof szFormatedText, "%T", "MENU_TITLE_WITH_PAGE", iClient, iRoundNumber, SIGN(iTotalBonus), Abs(iTotalBonus), iCurrentPage + 1, iMaxPages);
+    } else {
+        FormatEx(szFormatedText, sizeof szFormatedText, "%T", "MENU_TITLE", iClient, iRoundNumber, SIGN(iTotalBonus), Abs(iTotalBonus));
+    }
+
+    SetPanelTitle(panel, szFormatedText);
+
+    SendPanelToClient(panel, iClient, PanelHandler_ShowBonusMenu, 1);
 }
 
-public int HandleShowBonusMenu(Menu menu, MenuAction action, int iParam1, int iParam2)
+public int PanelHandler_ShowBonusMenu(Menu menu, MenuAction action, int iClient, int iParam)
 {
     switch (action)
     {
-        case MenuAction_Display: g_iClientMenuPagePosition[iParam1] = GetMenuSelectionPosition();
+        case MenuAction_Select:
+        {
+            int iStart = g_iClientMenuPagePosition[iClient];
+            int iCurrentPage = GetCurrentPage(iStart);
+            int iMaxPages = GetMaxPages(g_iCriteriesSize);
+
+            switch (iParam)
+            {
+                case 7:
+                {
+                    ShowBonusMenu(iClient, 0, InvertRoundNumber(g_iClientMenuShowRound[iClient]));
+                    PlaySoundMenuBack(iClient);
+                }
+
+                case MENU_KEY_NEXT:
+                {
+                    if (HasNextPage(iCurrentPage, iMaxPages)) {
+                        ShowBonusMenu(iClient, iStart + MENU_PAGE_SIZE, g_iClientMenuShowRound[iClient]);
+                        PlaySoundMenuClick(iClient);
+                    }
+                }
+
+                case MENU_KEY_BACK:
+                {
+                    if (HasPrevPage(iCurrentPage)) {
+                        ShowBonusMenu(iClient, iStart - MENU_PAGE_SIZE, g_iClientMenuShowRound[iClient]);
+                        PlaySoundMenuClick(iClient);
+                    } else {
+                        g_eClientMenuState[iClient] = MenuState_None;
+                        PlaySoundMenuBack(iClient);
+                    }
+                }
+
+                default:
+                {
+                    int iEnd   = GetPageEnd(iStart, g_iCriteriesSize);
+                    int iItemsOnPage = iEnd - iStart;
+                    int iSelectedIndex = iParam;
+
+                    if (iSelectedIndex && iSelectedIndex <= iItemsOnPage)
+                    {
+                        ShowBonusDescription(iClient, iStart + iSelectedIndex - 1);
+                        PlaySoundMenuClick(iClient);
+                    }
+                }
+            }
+        }
 
         case MenuAction_Cancel:
         {
-            int iClient = iParam1;
-
-            switch (iParam2)
+            switch (iParam)
             {
-                case MenuCancel_Exit, MenuCancel_Disconnected: {
-                    g_eClientMenuState[iClient] = MenuState_None;
-                }
-
-                case MenuCancel_Interrupted: {
+                case MenuCancel_Interrupted:
+                {
                     if (!g_bUpdateSelf) g_eClientMenuState[iClient] = MenuState_None;
                 }
             }
         }
-
-        case MenuAction_Select:
-        {
-            int iClient = iParam1;
-            int iSelectedIndex = iParam2;
-
-            if (iSelectedIndex == 0) {
-                ShowBonusMenu(iClient, g_iClientMenuPagePosition[iClient], InvertRoundNumber(g_iClientMenuShowRound[iClient]));
-            } else {
-                ShowBonusMenuDescription(iClient, g_iClientMenuPagePosition[iClient] + iSelectedIndex - 1);
-            }
-        }
-
-        case MenuAction_End: delete menu;
     }
 
     return 0;
 }
 
-void ShowBonusMenuDescription(int iClient, int iIndex)
+void ShowBonusDescription(int iClient, int iIndex)
 {
+    if (iIndex < 0 || iIndex >= g_iCriteriesSize)
+    {
+        ShowBonusMenu(iClient, 0, g_iClientMenuShowRound[iClient]);
+        return;
+    }
+
     g_eClientMenuState[iClient] = MenuState_ShowDescription;
     g_iClientMenuShowIndex[iClient] = iIndex;
 
-    Menu menu = CreateMenu(HandleShowBonusMenuDescription);
+    Panel panel = CreatePanel();
 
     CriteryInfo critery;
     GetArrayArray(g_hCriteries, iIndex, critery);
@@ -498,44 +596,46 @@ void ShowBonusMenuDescription(int iClient, int iIndex)
     int iValue = 0;
     ExecuteForward_GetValue(critery.value, iValue);
 
-    SetMenuTitle(menu, "%T", "PANEL_BONUS_INFO", iClient, szName, szDescription, SIGN(iValue), Abs(iValue));
+    char szFormatedText[128];
 
-    char szFormatedText[32];
-    FormatEx(szFormatedText, sizeof szFormatedText, "%T", "Back", iClient);
-    AddMenuItem(menu, "nav", szFormatedText);
+    DrawPanelText(panel, szDescription);
 
-    SetMenuExitButton(menu, false);
+    DrawPanelSpacer(panel);
 
-    DisplayMenu(menu, iClient, MENU_TIME_FOREVER);
+    FormatEx(szFormatedText, sizeof szFormatedText, "->%d. %T", MENU_KEY_BACK, "MENU_CLOSE", iClient);
+    DrawPanelText(panel, szFormatedText);
+
+    FormatEx(szFormatedText, sizeof szFormatedText, "%T", "MENU_BONUS_INFO", iClient, szName, SIGN(iValue), Abs(iValue));
+    SetPanelTitle(panel, szFormatedText);
+
+    SendPanelToClient(panel, iClient, PanelHandler_ShowBonusMenuDescription, 1);
 }
 
-public int HandleShowBonusMenuDescription(Menu menu, MenuAction action, int iParam1, int iParam2)
+public int PanelHandler_ShowBonusMenuDescription(Menu menu, MenuAction action, int iClient, int iParam)
 {
     switch (action)
     {
-        case MenuAction_Cancel:
+        case MenuAction_Select:
         {
-            int iClient = iParam1;
-
-            switch (iParam2)
+            switch (iParam)
             {
-                case MenuCancel_Exit, MenuCancel_Disconnected: {
-                    g_eClientMenuState[iClient] = MenuState_None;
-                }
-
-                case MenuCancel_Interrupted: {
-                    if (!g_bUpdateSelf) g_eClientMenuState[iClient] = MenuState_None;
+                case MENU_KEY_BACK: {
+                    ShowBonusMenu(iClient, g_iClientMenuPagePosition[iClient], g_iClientMenuShowRound[iClient]);
+                    PlaySoundMenuBack(iClient);
                 }
             }
         }
 
-        case MenuAction_Select:
+        case MenuAction_Cancel:
         {
-            int iClient = iParam1;
-            ShowBonusMenu(iClient, g_iClientMenuPagePosition[iClient], g_iClientMenuShowRound[iClient]);
+            switch (iParam)
+            {
+                case MenuCancel_Interrupted:
+                {
+                    if (!g_bUpdateSelf) g_eClientMenuState[iClient] = MenuState_None;
+                }
+            }
         }
-
-        case MenuAction_End: delete menu;
     }
 
     return 0;
@@ -631,6 +731,66 @@ int GetRoundNumber() {
 
 int InvertRoundNumber(int iRoundNumber) {
     return iRoundNumber == ROUND_SECOND ? ROUND_FIRST : ROUND_SECOND;
+}
+
+void LoadSoundFromCvar(ConVar hCvar, char[] szBuffer, int iLength, const char[] szDefault)
+{
+    GetConVarString(hCvar, szBuffer, iLength);
+
+    if (szBuffer[0] == '\0' || !IsSoundExists(szBuffer)) {
+        strcopy(szBuffer, iLength, szDefault);
+    }
+}
+
+bool IsSoundExists(const char[] szSoundPath)
+{
+    char szPath[PLATFORM_MAX_PATH];
+    FormatEx(szPath, sizeof(szPath), "sound/%s", szSoundPath);
+
+    return (FileExists(szPath, true));
+}
+
+void PlaySoundMenuClick(int iClient) {
+    EmitSoundToClient(iClient, g_szMenuClickSound);
+}
+
+void PlaySoundMenuBack(int iClient) {
+    EmitSoundToClient(iClient, g_szMenuBackSound);
+}
+
+// ============================================================================
+// HELPERS: PAGINATION
+// ============================================================================
+
+int GetMaxPages(int iTotalItems) {
+    return (iTotalItems + MENU_PAGE_SIZE - 1) / MENU_PAGE_SIZE;
+}
+
+int GetCurrentPage(int iStart) {
+    return iStart / MENU_PAGE_SIZE;
+}
+
+int GetPageEnd(int iStart, int iTotalItems)
+{
+    int iEnd = iStart + MENU_PAGE_SIZE;
+    return (iEnd > iTotalItems) ? iTotalItems : iEnd;
+}
+
+bool HasNextPage(int iCurrentPage, int iMaxPages) {
+    return iCurrentPage < iMaxPages - 1;
+}
+
+bool HasPrevPage(int iCurrentPage) {
+    return iCurrentPage > 0;
+}
+
+// ============================================================================
+// HELPERS: PANEL
+// ============================================================================
+
+void DrawPanelSpacer(Handle hPanel)
+{
+    DrawPanelText(hPanel, " ");
 }
 
 /**
