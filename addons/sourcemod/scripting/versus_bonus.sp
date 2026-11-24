@@ -375,7 +375,7 @@ Action Cmd_Bonus(int iClient, int iArgs)
         return Plugin_Continue;
     }
 
-    if (!iClient) {
+    if (!iClient || !IsClientInGame(iClient)) {
         return Plugin_Continue;
     }
 
